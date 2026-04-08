@@ -11,32 +11,50 @@ import CalculatorButton from "./components/CalculatorButton";
 
 const BUTTON_ROWS = [
   [
+    { label: "(", type: "operator" },
+    { label: ")", type: "operator" },
+    { label: "[", type: "operator" },
+    { label: "]", type: "operator" },
+  ],
+  [
+    { label: "{", type: "operator" },
+    { label: "}", type: "operator" },
+    { label: "C", type: "action" },
+    { label: "/", type: "operator" },
+  ],
+  [
     { label: "7", type: "number" },
     { label: "8", type: "number" },
     { label: "9", type: "number" },
-    { label: "/", type: "operator" },
+    { label: "*", type: "operator" },
   ],
   [
     { label: "4", type: "number" },
     { label: "5", type: "number" },
     { label: "6", type: "number" },
-    { label: "*", type: "operator" },
+    { label: "-", type: "operator" },
   ],
   [
     { label: "1", type: "number" },
     { label: "2", type: "number" },
     { label: "3", type: "number" },
-    { label: "-", type: "operator" },
+    { label: "+", type: "operator" },
   ],
   [
     { label: "0", type: "number" },
-    { label: "C", type: "action" },
+    { label: ".", type: "number" },
     { label: "=", type: "equals" },
-    { label: "+", type: "operator" },
   ],
 ];
 
 const operators = ["+", "-", "*", "/"];
+const openingBrackets = ["(", "[", "{"];
+const closingBrackets = [")", "]", "}"];
+const bracketPairs = {
+  ")": "(",
+  "]": "[",
+  "}": "{",
+};
 
 const formatNumber = (value) => {
   const numericValue = Number(value);
@@ -45,86 +63,230 @@ const formatNumber = (value) => {
     return "Error";
   }
 
-  const formatted = Number.isInteger(numericValue)
+  return Number.isInteger(numericValue)
     ? numericValue.toString()
     : numericValue.toFixed(10).replace(/\.?0+$/, "");
+};
 
-  return formatted;
+const tokenize = (expression) => {
+  const tokens = [];
+  let currentNumber = "";
+
+  for (const char of expression) {
+    if (/\d|\./.test(char)) {
+      currentNumber += char;
+      continue;
+    }
+
+    if (currentNumber) {
+      tokens.push(currentNumber);
+      currentNumber = "";
+    }
+
+    if (operators.includes(char) || openingBrackets.includes(char) || closingBrackets.includes(char)) {
+      tokens.push(char);
+    }
+  }
+
+  if (currentNumber) {
+    tokens.push(currentNumber);
+  }
+
+  return tokens;
+};
+
+const precedence = (operator) => {
+  if (operator === "+" || operator === "-") {
+    return 1;
+  }
+
+  if (operator === "*" || operator === "/") {
+    return 2;
+  }
+
+  return 0;
+};
+
+const toRpn = (tokens) => {
+  const output = [];
+  const stack = [];
+
+  for (const token of tokens) {
+    if (!Number.isNaN(Number(token))) {
+      output.push(token);
+      continue;
+    }
+
+    if (operators.includes(token)) {
+      while (
+        stack.length > 0 &&
+        operators.includes(stack[stack.length - 1]) &&
+        precedence(stack[stack.length - 1]) >= precedence(token)
+      ) {
+        output.push(stack.pop());
+      }
+
+      stack.push(token);
+      continue;
+    }
+
+    if (openingBrackets.includes(token)) {
+      stack.push(token);
+      continue;
+    }
+
+    if (closingBrackets.includes(token)) {
+      while (
+        stack.length > 0 &&
+        !openingBrackets.includes(stack[stack.length - 1])
+      ) {
+        output.push(stack.pop());
+      }
+
+      if (stack.length === 0 || stack[stack.length - 1] !== bracketPairs[token]) {
+        throw new Error("Agrupamento invalido");
+      }
+
+      stack.pop();
+    }
+  }
+
+  while (stack.length > 0) {
+    const token = stack.pop();
+
+    if (openingBrackets.includes(token)) {
+      throw new Error("Agrupamento invalido");
+    }
+
+    output.push(token);
+  }
+
+  return output;
+};
+
+const evaluateRpn = (tokens) => {
+  const stack = [];
+
+  for (const token of tokens) {
+    if (!Number.isNaN(Number(token))) {
+      stack.push(Number(token));
+      continue;
+    }
+
+    const right = stack.pop();
+    const left = stack.pop();
+
+    if (left === undefined || right === undefined) {
+      throw new Error("Expressao invalida");
+    }
+
+    switch (token) {
+      case "+":
+        stack.push(left + right);
+        break;
+      case "-":
+        stack.push(left - right);
+        break;
+      case "*":
+        stack.push(left * right);
+        break;
+      case "/":
+        if (right === 0) {
+          throw new Error("Cannot divide by zero");
+        }
+        stack.push(left / right);
+        break;
+      default:
+        throw new Error("Expressao invalida");
+    }
+  }
+
+  if (stack.length !== 1) {
+    throw new Error("Expressao invalida");
+  }
+
+  return stack[0];
+};
+
+const evaluateExpression = (expression) => {
+  const normalized = expression.replace(/\s+/g, "");
+
+  if (!normalized) {
+    return "0";
+  }
+
+  const tokens = tokenize(normalized);
+  const rpn = toRpn(tokens);
+  const result = evaluateRpn(rpn);
+  return formatNumber(result);
 };
 
 export default function App() {
   const { width } = useWindowDimensions();
-  const isCompact = width < 360;
+  const isCompact = width < 380;
   const [currentInput, setCurrentInput] = useState("0");
-  const [previousValue, setPreviousValue] = useState(null);
-  const [selectedOperator, setSelectedOperator] = useState(null);
+  const [previousValue, setPreviousValue] = useState("");
+  const [selectedOperator, setSelectedOperator] = useState("");
   const [result, setResult] = useState("");
 
-  const expressionText = useMemo(() => {
-    if (previousValue !== null && selectedOperator) {
-      return currentInput
-        ? `${formatNumber(previousValue)} ${selectedOperator} ${currentInput}`
-        : `${formatNumber(previousValue)} ${selectedOperator}`;
-    }
-
+  const displayExpression = useMemo(() => {
     return currentInput || "0";
-  }, [currentInput, previousValue, selectedOperator]);
+  }, [currentInput]);
+
+  const lastCharacter = currentInput.slice(-1);
 
   const clearAll = () => {
     setCurrentInput("0");
-    setPreviousValue(null);
-    setSelectedOperator(null);
+    setPreviousValue("");
+    setSelectedOperator("");
     setResult("");
   };
 
-  const appendNumber = (value) => {
-    if (result === "Cannot divide by zero" || result === "Error") {
-      setResult("");
-      setPreviousValue(null);
-      setSelectedOperator(null);
-      setCurrentInput(value);
-      return;
-    }
-
-    if (result && !selectedOperator && currentInput === result) {
-      setCurrentInput(value);
-      setPreviousValue(null);
+  const appendDigit = (digit) => {
+    if (result && currentInput === result) {
+      setCurrentInput(digit);
+      setPreviousValue("");
+      setSelectedOperator("");
       setResult("");
       return;
     }
 
     setCurrentInput((prev) => {
-      if (prev === "0" || prev === "") {
-        return value;
+      if (prev === "0") {
+        return digit;
       }
 
-      return `${prev}${value}`;
+      if (closingBrackets.includes(prev.slice(-1))) {
+        return prev;
+      }
+
+      return `${prev}${digit}`;
     });
     setResult("");
   };
 
   const appendDecimal = () => {
-    if (result === "Cannot divide by zero" || result === "Error") {
+    if (result && currentInput === result) {
       setCurrentInput("0.");
+      setPreviousValue("");
+      setSelectedOperator("");
       setResult("");
-      setPreviousValue(null);
-      setSelectedOperator(null);
       return;
     }
 
-    if (result && !selectedOperator && currentInput === result) {
-      setCurrentInput("0.");
-      setPreviousValue(null);
-      setResult("");
+    const tokens = tokenize(currentInput);
+    const lastToken = tokens[tokens.length - 1] || "";
+
+    if (lastToken.includes(".")) {
       return;
     }
 
     setCurrentInput((prev) => {
-      if (prev === "") {
-        return "0.";
+      if (prev === "0" || operators.includes(prev.slice(-1)) || openingBrackets.includes(prev.slice(-1))) {
+        return prev === "0" ? "0." : `${prev}0.`;
       }
 
-      if (prev.includes(".")) {
+      if (closingBrackets.includes(prev.slice(-1))) {
         return prev;
       }
 
@@ -133,105 +295,86 @@ export default function App() {
     setResult("");
   };
 
-  const performCalculation = (left, right, operator) => {
-    switch (operator) {
-      case "+":
-        return left + right;
-      case "-":
-        return left - right;
-      case "*":
-        return left * right;
-      case "/":
-        if (right === 0) {
-          return null;
+  const appendOperator = (operator) => {
+    if (currentInput === "0" && operator !== "-") {
+      return;
+    }
+
+    if (openingBrackets.includes(operator)) {
+      setCurrentInput((prev) => {
+        if (prev === "0") {
+          return operator;
         }
-        return left / right;
-      default:
-        return right;
-    }
-  };
 
-  const handleOperator = (operator) => {
-    if (currentInput === "Error") {
+        if (/\d/.test(prev.slice(-1)) || closingBrackets.includes(prev.slice(-1))) {
+          return prev;
+        }
+
+        return `${prev}${operator}`;
+      });
+      setResult("");
       return;
     }
 
-    const currentValue = Number(currentInput);
+    if (closingBrackets.includes(operator)) {
+      const openCount = [...currentInput].filter((char) => bracketPairs[operator] === char).length;
+      const closeCount = [...currentInput].filter((char) => char === operator).length;
 
-    if (Number.isNaN(currentValue)) {
+      if (
+        openCount <= closeCount ||
+        operators.includes(lastCharacter) ||
+        openingBrackets.includes(lastCharacter)
+      ) {
+        return;
+      }
+
+      setCurrentInput((prev) => `${prev}${operator}`);
+      setResult("");
       return;
     }
 
-    if (previousValue !== null && selectedOperator) {
-      if (currentInput === "") {
-        setSelectedOperator(operator);
-        return;
+    setCurrentInput((prev) => {
+      if (result && prev === result) {
+        setPreviousValue(result);
       }
 
-      const calculatedValue = performCalculation(
-        previousValue,
-        currentValue,
-        selectedOperator
-      );
-
-      if (calculatedValue === null) {
-        setResult("Cannot divide by zero");
-        setCurrentInput("0");
-        setPreviousValue(null);
-        setSelectedOperator(null);
-        return;
+      if (operators.includes(prev.slice(-1))) {
+        return `${prev.slice(0, -1)}${operator}`;
       }
 
-      const formattedValue = formatNumber(calculatedValue);
-      setPreviousValue(calculatedValue);
-      setResult(formattedValue);
-    } else {
-      setPreviousValue(currentValue);
-    }
+      if (openingBrackets.includes(prev.slice(-1))) {
+        return prev;
+      }
+
+      return `${prev}${operator}`;
+    });
 
     setSelectedOperator(operator);
-    setCurrentInput("");
+    setResult("");
   };
 
   const handleEquals = () => {
-    if (previousValue === null || !selectedOperator) {
-      setResult(formatNumber(currentInput || "0"));
-      setCurrentInput(currentInput || "0");
-      return;
+    try {
+      const calculated = evaluateExpression(currentInput);
+      setPreviousValue(currentInput);
+      setSelectedOperator("");
+      setCurrentInput(calculated);
+      setResult(calculated);
+    } catch (error) {
+      const message =
+        error.message === "Cannot divide by zero"
+          ? "Cannot divide by zero"
+          : "Expressao invalida";
+
+      setPreviousValue(currentInput);
+      setSelectedOperator("");
+      setResult(message);
     }
-
-    if (currentInput === "") {
-      setResult(formatNumber(previousValue));
-      setCurrentInput(formatNumber(previousValue));
-      setSelectedOperator(null);
-      return;
-    }
-
-    const currentValue = Number(currentInput);
-    const calculatedValue = performCalculation(
-      previousValue,
-      currentValue,
-      selectedOperator
-    );
-
-    if (calculatedValue === null) {
-      setResult("Cannot divide by zero");
-      setCurrentInput("0");
-      setPreviousValue(null);
-      setSelectedOperator(null);
-      return;
-    }
-
-    const formattedValue = formatNumber(calculatedValue);
-    setCurrentInput(formattedValue);
-    setPreviousValue(calculatedValue);
-    setSelectedOperator(null);
-    setResult(formattedValue);
   };
 
   const handleButtonPress = (label) => {
     if (/^\d$/.test(label)) {
-      appendNumber(label);
+      appendDigit(label);
       return;
     }
 
@@ -240,8 +383,8 @@ export default function App() {
       return;
     }
 
-    if (operators.includes(label)) {
-      handleOperator(label);
+    if (label === "C") {
+      clearAll();
       return;
     }
 
@@ -250,9 +393,7 @@ export default function App() {
       return;
     }
 
-    if (label === "C") {
-      clearAll();
-    }
+    appendOperator(label);
   };
 
   return (
@@ -265,18 +406,23 @@ export default function App() {
           <View style={styles.display}>
             <Text
               style={styles.expressionText}
-              numberOfLines={2}
+              numberOfLines={3}
               adjustsFontSizeToFit
             >
-              {expressionText}
+              {previousValue && result && result !== currentInput
+                ? previousValue
+                : displayExpression}
             </Text>
             <Text
               style={[styles.resultText, isCompact && styles.resultTextCompact]}
               numberOfLines={2}
               adjustsFontSizeToFit
             >
-              {result || currentInput}
+              {result || displayExpression}
             </Text>
+            {selectedOperator ? (
+              <Text style={styles.helperText}>Operador atual: {selectedOperator}</Text>
+            ) : null}
           </View>
 
           <View style={styles.grid}>
@@ -290,19 +436,16 @@ export default function App() {
                     onPress={() => handleButtonPress(button.label)}
                   />
                 ))}
+                {row.length < 4
+                  ? Array.from({ length: 4 - row.length }).map((_, index) => (
+                      <View
+                        key={`placeholder-${rowIndex}-${index}`}
+                        style={styles.placeholder}
+                      />
+                    ))
+                  : null}
               </View>
             ))}
-
-            <View style={styles.row}>
-              <CalculatorButton
-                label="."
-                variant="number"
-                onPress={() => handleButtonPress(".")}
-              />
-              <View style={styles.placeholder} />
-              <View style={styles.placeholder} />
-              <View style={styles.placeholder} />
-            </View>
           </View>
         </View>
       </View>
@@ -345,7 +488,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   display: {
-    minHeight: 140,
+    minHeight: 160,
     borderRadius: 24,
     backgroundColor: "#0f172a",
     paddingHorizontal: 18,
@@ -354,18 +497,24 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   expressionText: {
-    fontSize: 22,
+    fontSize: 20,
     color: "#93c5fd",
     textAlign: "right",
   },
   resultText: {
-    fontSize: 44,
+    fontSize: 40,
     fontWeight: "800",
     color: "#ffffff",
     textAlign: "right",
   },
   resultTextCompact: {
-    fontSize: 36,
+    fontSize: 32,
+  },
+  helperText: {
+    color: "#bfdbfe",
+    textAlign: "right",
+    fontSize: 13,
+    marginTop: 8,
   },
   grid: {
     width: "100%",
