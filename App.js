@@ -6,6 +6,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import CalculatorButton from "./components/CalculatorButton";
 
@@ -397,85 +398,129 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
-      <View style={styles.container}>
-        <View style={[styles.card, isCompact && styles.cardCompact]}>
-          <Text style={styles.title}>SimpleCalculator</Text>
+    <LinearGradient
+      colors={["#020617", "#0f172a", "#082f49"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.background}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="light" />
+        <View style={styles.container}>
+          <View style={styles.orbPrimary} />
+          <View style={styles.orbSecondary} />
+          <LinearGradient
+            colors={["rgba(15, 23, 42, 0.94)", "rgba(3, 7, 18, 0.92)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.card, isCompact && styles.cardCompact]}
+          >
+            <Text style={styles.title}>SimpleCalculator</Text>
+            <Text style={styles.subtitle}>Practical React Native learning project</Text>
 
-          <View style={styles.display}>
-            <Text
-              style={styles.expressionText}
-              numberOfLines={3}
-              adjustsFontSizeToFit
+            <LinearGradient
+              colors={["rgba(8, 47, 73, 0.95)", "rgba(15, 23, 42, 0.96)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.display}
             >
-              {previousValue && result && result !== currentInput
-                ? previousValue
-                : displayExpression}
-            </Text>
-            <Text
-              style={[styles.resultText, isCompact && styles.resultTextCompact]}
-              numberOfLines={2}
-              adjustsFontSizeToFit
-            >
-              {result || displayExpression}
-            </Text>
-            {selectedOperator ? (
-              <Text style={styles.helperText}>Operador atual: {selectedOperator}</Text>
-            ) : null}
-          </View>
+              <Text
+                style={styles.expressionText}
+                numberOfLines={3}
+                adjustsFontSizeToFit
+              >
+                {previousValue && result && result !== currentInput
+                  ? previousValue
+                  : displayExpression}
+              </Text>
+              <Text
+                style={[styles.resultText, isCompact && styles.resultTextCompact]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+              >
+                {result || displayExpression}
+              </Text>
+              {selectedOperator ? (
+                <Text style={styles.helperText}>Current operator: {selectedOperator}</Text>
+              ) : (
+                <Text style={styles.helperText}>Supports (), [] and {"{}"}</Text>
+              )}
+            </LinearGradient>
 
-          <View style={styles.grid}>
-            {BUTTON_ROWS.map((row, rowIndex) => (
-              <View style={styles.row} key={`row-${rowIndex}`}>
-                {row.map((button) => (
-                  <CalculatorButton
-                    key={button.label}
-                    label={button.label}
-                    variant={button.type}
-                    onPress={() => handleButtonPress(button.label)}
-                  />
-                ))}
-                {row.length < 4
-                  ? Array.from({ length: 4 - row.length }).map((_, index) => (
-                      <View
-                        key={`placeholder-${rowIndex}-${index}`}
-                        style={styles.placeholder}
-                      />
-                    ))
-                  : null}
-              </View>
-            ))}
-          </View>
+            <View style={styles.grid}>
+              {BUTTON_ROWS.map((row, rowIndex) => (
+                <View style={styles.row} key={`row-${rowIndex}`}>
+                  {row.map((button) => (
+                    <CalculatorButton
+                      key={button.label}
+                      label={button.label}
+                      variant={button.type}
+                      onPress={() => handleButtonPress(button.label)}
+                    />
+                  ))}
+                  {row.length < 4
+                    ? Array.from({ length: 4 - row.length }).map((_, index) => (
+                        <View
+                          key={`placeholder-${rowIndex}-${index}`}
+                          style={styles.placeholder}
+                        />
+                      ))
+                    : null}
+                </View>
+              ))}
+            </View>
+          </LinearGradient>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "transparent",
   },
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "transparent",
+  },
+  orbPrimary: {
+    position: "absolute",
+    top: 90,
+    right: 10,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(34, 211, 238, 0.14)",
+  },
+  orbSecondary: {
+    position: "absolute",
+    bottom: 120,
+    left: -20,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(14, 165, 233, 0.1)",
   },
   card: {
     width: "100%",
     maxWidth: 420,
-    backgroundColor: "#f8fafc",
     borderRadius: 28,
     padding: 18,
-    shadowColor: "#0f172a",
+    borderWidth: 1,
+    borderColor: "rgba(125, 211, 252, 0.18)",
+    shadowColor: "#020617",
     shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 30,
+    elevation: 12,
   },
   cardCompact: {
     padding: 14,
@@ -483,14 +528,24 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
-    marginBottom: 16,
+    color: "#f8fafc",
+    letterSpacing: 0.8,
+    marginBottom: 6,
     textAlign: "center",
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "#7dd3fc",
+    textAlign: "center",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: 16,
   },
   display: {
     minHeight: 160,
     borderRadius: 24,
-    backgroundColor: "#0f172a",
+    borderWidth: 1,
+    borderColor: "rgba(103, 232, 249, 0.16)",
     paddingHorizontal: 18,
     paddingVertical: 20,
     justifyContent: "space-between",
@@ -498,20 +553,20 @@ const styles = StyleSheet.create({
   },
   expressionText: {
     fontSize: 20,
-    color: "#93c5fd",
+    color: "#7dd3fc",
     textAlign: "right",
   },
   resultText: {
     fontSize: 40,
     fontWeight: "800",
-    color: "#ffffff",
+    color: "#ecfeff",
     textAlign: "right",
   },
   resultTextCompact: {
     fontSize: 32,
   },
   helperText: {
-    color: "#bfdbfe",
+    color: "#a5f3fc",
     textAlign: "right",
     fontSize: 13,
     marginTop: 8,

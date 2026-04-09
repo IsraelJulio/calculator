@@ -48,45 +48,50 @@ const styles = StyleSheet.create({
     margin: 6,
   },
   pressed: {
-    opacity: 0.9,
+    opacity: 0.96,
   },
   button: {
     minHeight: 72,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0f172a",
+    borderWidth: 1,
+    shadowColor: "#020617",
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.28,
     shadowRadius: 18,
-    elevation: 3,
+    elevation: 5,
   },
   text: {
     fontSize: 28,
     fontWeight: "700",
   },
   number: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "rgba(15, 23, 42, 0.88)",
+    borderColor: "rgba(56, 189, 248, 0.14)",
   },
   operator: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "rgba(8, 47, 73, 0.92)",
+    borderColor: "rgba(34, 211, 238, 0.24)",
   },
   action: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: "rgba(69, 10, 10, 0.92)",
+    borderColor: "rgba(248, 113, 113, 0.24)",
   },
   equals: {
-    backgroundColor: "#2563eb",
+    backgroundColor: "#06b6d4",
+    borderColor: "rgba(165, 243, 252, 0.55)",
   },
   numberText: {
-    color: "#0f172a",
+    color: "#e2e8f0",
   },
   operatorText: {
-    color: "#1d4ed8",
+    color: "#67e8f9",
   },
   actionText: {
-    color: "#dc2626",
+    color: "#fca5a5",
   },
   equalsText: {
-    color: "#ffffff",
+    color: "#082f49",
   },
 });

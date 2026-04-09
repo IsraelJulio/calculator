@@ -15,13 +15,31 @@ This project was created as a practical learning exercise. The main idea is to u
 - Graceful division-by-zero handling
 - Responsive mobile-friendly layout
 - Press feedback animation for buttons
+- Tech-inspired visual design with gradient layers
 
 ## Tech Stack
 
 - React Native
 - Expo
+- expo-linear-gradient
 - Functional components
 - React Hooks with `useState`
+
+## Styling Library
+
+The app uses `expo-linear-gradient`, an Expo-compatible styling library, to create a more technological visual style with layered gradients in the background, calculator panel, and display area.
+
+Install dependencies with:
+
+```bash
+npm install
+```
+
+The gradient library is included in the project dependencies, so the app still runs normally with:
+
+```bash
+npx expo start
+```
 
 ## Getting Started
 
