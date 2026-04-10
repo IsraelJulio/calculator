@@ -11,11 +11,19 @@ This project was created as a practical learning exercise. The main idea is to u
 - Basic arithmetic operations: addition, subtraction, multiplication, and division
 - Support for decimal numbers
 - Support for grouped expressions using `()`, `[]`, and `{}`
+- Recent calculation history with the last 5 successful expressions and results
+- Tap a history item to reuse its result in the calculator
 - Validation for invalid expressions
 - Graceful division-by-zero handling
 - Responsive mobile-friendly layout
 - Press feedback animation for buttons
 - Tech-inspired visual design with gradient layers
+
+## Recent History
+
+The calculator now includes a recent history section below the display. Every valid calculation is saved in the list, showing both the original expression and its result.
+
+Only the 5 most recent successful calculations are kept on screen, which helps keep the interface clean while still making repeated calculations easier. Tapping a history item loads its result back into the calculator so it can be reused in the next operation.
 
 ## Tech Stack
 
