@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import {
+  Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -222,6 +224,8 @@ const evaluateExpression = (expression) => {
   return formatNumber(result);
 };
 
+const HISTORY_LIMIT = 5;
+
 export default function App() {
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -229,6 +233,7 @@ export default function App() {
   const [previousValue, setPreviousValue] = useState("");
   const [selectedOperator, setSelectedOperator] = useState("");
   const [result, setResult] = useState("");
+  const [history, setHistory] = useState([]);
 
   const displayExpression = useMemo(() => {
     return currentInput || "0";
@@ -357,6 +362,14 @@ export default function App() {
   const handleEquals = () => {
     try {
       const calculated = evaluateExpression(currentInput);
+      setHistory((prev) => {
+        const nextEntry = {
+          expression: currentInput,
+          result: calculated,
+        };
+
+        return [nextEntry, ...prev].slice(0, HISTORY_LIMIT);
+      });
       setPreviousValue(currentInput);
       setSelectedOperator("");
       setCurrentInput(calculated);
@@ -406,70 +419,118 @@ export default function App() {
     >
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="light" />
-        <View style={styles.container}>
+        <View style={styles.screen}>
           <View style={styles.orbPrimary} />
           <View style={styles.orbSecondary} />
-          <LinearGradient
-            colors={["rgba(15, 23, 42, 0.94)", "rgba(3, 7, 18, 0.92)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.card, isCompact && styles.cardCompact]}
+          <ScrollView
+            contentContainerStyle={styles.container}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>SimpleCalculator</Text>
-            <Text style={styles.subtitle}>Practical React Native learning project</Text>
-
             <LinearGradient
-              colors={["rgba(8, 47, 73, 0.95)", "rgba(15, 23, 42, 0.96)"]}
+              colors={["rgba(15, 23, 42, 0.94)", "rgba(3, 7, 18, 0.92)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.display}
+              style={[styles.card, isCompact && styles.cardCompact]}
             >
-              <Text
-                style={styles.expressionText}
-                numberOfLines={3}
-                adjustsFontSizeToFit
-              >
-                {previousValue && result && result !== currentInput
-                  ? previousValue
-                  : displayExpression}
-              </Text>
-              <Text
-                style={[styles.resultText, isCompact && styles.resultTextCompact]}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-              >
-                {result || displayExpression}
-              </Text>
-              {selectedOperator ? (
-                <Text style={styles.helperText}>Current operator: {selectedOperator}</Text>
-              ) : (
-                <Text style={styles.helperText}>Supports (), [] and {"{}"}</Text>
-              )}
-            </LinearGradient>
+              <Text style={styles.title}>SimpleCalculator</Text>
+              <Text style={styles.subtitle}>Practical React Native learning project</Text>
 
-            <View style={styles.grid}>
-              {BUTTON_ROWS.map((row, rowIndex) => (
-                <View style={styles.row} key={`row-${rowIndex}`}>
-                  {row.map((button) => (
-                    <CalculatorButton
-                      key={button.label}
-                      label={button.label}
-                      variant={button.type}
-                      onPress={() => handleButtonPress(button.label)}
-                    />
-                  ))}
-                  {row.length < 4
-                    ? Array.from({ length: 4 - row.length }).map((_, index) => (
-                        <View
-                          key={`placeholder-${rowIndex}-${index}`}
-                          style={styles.placeholder}
-                        />
-                      ))
-                    : null}
+              <LinearGradient
+                colors={["rgba(8, 47, 73, 0.95)", "rgba(15, 23, 42, 0.96)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.display}
+              >
+                <Text
+                  style={styles.expressionText}
+                  numberOfLines={3}
+                  adjustsFontSizeToFit
+                >
+                  {previousValue && result && result !== currentInput
+                    ? previousValue
+                    : displayExpression}
+                </Text>
+                <Text
+                  style={[styles.resultText, isCompact && styles.resultTextCompact]}
+                  numberOfLines={2}
+                  adjustsFontSizeToFit
+                >
+                  {result || displayExpression}
+                </Text>
+                {selectedOperator ? (
+                  <Text style={styles.helperText}>Current operator: {selectedOperator}</Text>
+                ) : (
+                  <Text style={styles.helperText}>Supports (), [] and {"{}"}</Text>
+                )}
+              </LinearGradient>
+
+              <View style={styles.historyCard}>
+                <View style={styles.historyHeader}>
+                  <Text style={styles.historyTitle}>Historico</Text>
+                  <Text style={styles.historyCaption}>Ultimas {HISTORY_LIMIT} contas</Text>
                 </View>
-              ))}
-            </View>
-          </LinearGradient>
+
+                {history.length > 0 ? (
+                  <ScrollView
+                    horizontal
+                    style={styles.historyList}
+                    contentContainerStyle={styles.historyListContent}
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    {history.map((entry, index) => (
+                      <Pressable
+                        key={`${entry.expression}-${entry.result}-${index}`}
+                        onPress={() => {
+                          setCurrentInput(entry.result);
+                          setPreviousValue(entry.expression);
+                          setSelectedOperator("");
+                          setResult(entry.result);
+                        }}
+                        style={({ pressed }) => [
+                          styles.historyItem,
+                          pressed && styles.historyItemPressed,
+                        ]}
+                      >
+                        <Text style={styles.historyExpression} numberOfLines={1}>
+                          {entry.expression}
+                        </Text>
+                        <Text style={styles.historyResult} numberOfLines={1}>
+                          = {entry.result}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={styles.historyEmpty}>
+                    Suas contas recentes vao aparecer aqui.
+                  </Text>
+                )}
+              </View>
+
+              <View style={styles.grid}>
+                {BUTTON_ROWS.map((row, rowIndex) => (
+                  <View style={styles.row} key={`row-${rowIndex}`}>
+                    {row.map((button) => (
+                      <CalculatorButton
+                        key={button.label}
+                        label={button.label}
+                        variant={button.type}
+                        onPress={() => handleButtonPress(button.label)}
+                      />
+                    ))}
+                    {row.length < 4
+                      ? Array.from({ length: 4 - row.length }).map((_, index) => (
+                          <View
+                            key={`placeholder-${rowIndex}-${index}`}
+                            style={styles.placeholder}
+                          />
+                        ))
+                      : null}
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
+          </ScrollView>
         </View>
       </SafeAreaView>
     </LinearGradient>
@@ -484,11 +545,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "transparent",
   },
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: "transparent",
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    paddingVertical: 28,
     backgroundColor: "transparent",
   },
   orbPrimary: {
@@ -570,6 +636,66 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 13,
     marginTop: 8,
+  },
+  historyCard: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(125, 211, 252, 0.12)",
+    backgroundColor: "rgba(8, 47, 73, 0.24)",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 18,
+  },
+  historyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  historyTitle: {
+    color: "#ecfeff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  historyCaption: {
+    color: "#67e8f9",
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  historyList: {
+    marginHorizontal: -2,
+  },
+  historyListContent: {
+    paddingHorizontal: 2,
+  },
+  historyItem: {
+    width: 150,
+    borderRadius: 16,
+    backgroundColor: "rgba(15, 23, 42, 0.72)",
+    borderWidth: 1,
+    borderColor: "rgba(103, 232, 249, 0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginRight: 8,
+  },
+  historyItemPressed: {
+    opacity: 0.86,
+  },
+  historyExpression: {
+    color: "#a5f3fc",
+    fontSize: 13,
+  },
+  historyResult: {
+    color: "#f8fafc",
+    fontSize: 17,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  historyEmpty: {
+    color: "#94a3b8",
+    fontSize: 13,
+    lineHeight: 20,
   },
   grid: {
     width: "100%",
