@@ -12,7 +12,7 @@ export default function CalculatorButton({
     Animated.spring(scale, {
       toValue: value,
       useNativeDriver: true,
-      speed: 30,
+      speed: 35,
       bounciness: 6,
     }).start();
   };
@@ -20,7 +20,7 @@ export default function CalculatorButton({
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => animateTo(0.96)}
+      onPressIn={() => animateTo(0.97)}
       onPressOut={() => animateTo(1)}
       style={({ pressed }) => [
         styles.pressable,
